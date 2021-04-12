@@ -1,6 +1,7 @@
 const express = require('express');
 const rateLimit = require("express-rate-limit");
 const fetch = require('node-fetch');
+var cors = require('cors')
 
 require('dotenv').config();
 
@@ -11,9 +12,11 @@ const limiter = rateLimit({
     max: 10 // limit each IP to 10 requests per windowMs
 });
 
-//  apply to all requests
-app.use(limiter);
+if(process.env.use_express_rate_limit == 1){
+    app.use(limiter);
+}
 
+app.use(cors());
 
 app.listen(process.env.PORT || 3000, () => {
     console.log("Server up");
@@ -58,7 +61,10 @@ async function refresh_token(refresh_token) {
 
     let json = await repsonse.json();
 
-    return { access_token: json.access_token };
+    if (json.hasOwnProperty("access_token"))
+        return { access_token: json.access_token };
+    else
+        return json;
 }
 
 async function generate_token(code) {
@@ -80,5 +86,8 @@ async function generate_token(code) {
 
     let json = await repsonse.json();
 
-    return { access_token: json.access_token, refresh_token: json.refresh_token };
+    if (json.hasOwnProperty("access_token") && json.hasOwnProperty("refresh_token"))
+        return { access_token: json.access_token, refresh_token: json.refresh_token };
+    else
+        return json;
 }
